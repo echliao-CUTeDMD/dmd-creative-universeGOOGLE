@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>中國科技大學 數位多媒體設計系｜3D 互動創客元宇宙 (dmd.cute.edu.tw)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+:root{
+  --bg:#0b1020;
+  --panel:rgba(15,23,42,.84);
+  --panel-soft:rgba(30,41,59,.78);
+  --line:rgba(148,163,184,.2);
+  --text:#f1f5f9;
+  --muted:#94a3b8;
+  --cyan:#06b6d4;
+  --purple:#8b5cf6;
+  --pink:#ec4899;
+  --amber:#f59e0b;
+  --emerald:#10b981;
+  --shadow:0 20px 55px rgba(2,6,23,.65);
+}
+body.light-mode{
+  --bg:#eef2ff;
+  --panel:rgba(255,255,255,.88);
+  --panel-soft:rgba(241,245,249,.9);
+  --line:rgba(15,23,42,.12);
+  --text:#0f172a;
+  --muted:#475569;
+  --shadow:0 18px 45px rgba(15,23,42,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font:13px "Noto Sans TC",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--panel-soft);border-radius:10px;padding:7px 12px;transition:all .18s ease}
+button:hover{border-color:var(--cyan);transform:translateY(-1px)}
+button.active,button[aria-pressed="true"]{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(6,182,212,.35)}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+#world,#labels{position:absolute;inset:0}
+#world canvas{display:block;touch-action:none}
+#labels{pointer-events:none;overflow:hidden;z-index:2}
+
+.glass{background:var(--panel);backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:var(--shadow)}
+
+/* Brand Header */
+.brand{
+  position:absolute;top:20px;left:20px;z-index:10;
+  width:320px;padding:18px 20px;border-radius:20px;
+}
+.brand .kicker{font:800 10px "Orbitron",monospace;letter-spacing:2px;color:var(--cyan);display:flex;align-items:center;gap:6px}
+.brand h1{font-size:21px;font-weight:900;margin:6px 0 4px;letter-spacing:.5px;background:linear-gradient(90deg,#fff,var(--cyan),#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+body.light-mode .brand h1{background:linear-gradient(90deg,#0f172a,#0284c7,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.brand p{font-size:11.5px;color:var(--muted);line-height:1.5}
+.brand-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)}
+.badge.purple{background:rgba(139,92,246,.16);color:#c4b5fd;border-color:rgba(139,92,246,.35)}
+body.light-mode .badge.purple{color:#6d28d9}
+
+/* Top Quick Zone Nav */
+.quick-nav{
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:16px;white-space:nowrap;
+}
+.quick-nav button{font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:10px;background:transparent;border-color:transparent}
+.quick-nav button:hover{background:rgba(6,182,212,.14);border-color:rgba(6,182,212,.3)}
+.quick-nav .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.quick-nav .cam-btn{min-width:30px;padding:5px 8px;background:var(--panel-soft);font-family:"JetBrains Mono",monospace}
+
+/* Left Tools Bar */
+.tools{
+  position:absolute;top:198px;left:20px;z-index:10;
+  display:flex;flex-wrap:wrap;gap:5px;width:320px;padding:7px;border-radius:15px;
+}
+.tools button,.tools a.btn-link{
+  flex:1 1 auto;font-size:11px;font-weight:700;padding:7px 9px;border-radius:10px;
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  background:transparent;border:1px solid transparent;color:var(--text);text-decoration:none;
+}
+.tools button:hover,.tools a.btn-link:hover{background:rgba(139,92,246,.18);border-color:rgba(139,92,246,.35)}
+
+/* Right Sidebar */
+.sidebar{
+  position:absolute;top:20px;right:20px;bottom:92px;width:350px;z-index:10;
+  border-radius:22px;display:flex;flex-direction:column;overflow:hidden;
+}
+.side-head{padding:18px 20px 10px}
+.side-head .kicker{font:800 9px "Orbitron",monospace;letter-spacing:2px;color:var(--cyan)}
+.side-head h2{font-size:18px;margin:4px 0}
+.side-head p{font-size:11px;color:var(--muted);line-height:1.6}
+.tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;
+  margin:4px 16px 10px;padding:5px;background:rgba(2,6,23,.35);border-radius:13px;
+}
+body.light-mode .tabs{background:rgba(15,23,42,.06)}
+.tabs button{padding:6px 4px;font-size:11px;font-weight:700;border-radius:8px;border:none;background:transparent;color:var(--muted)}
+.tabs button.active{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;box-shadow:0 3px 10px rgba(6,182,212,.3)}
+.search{
+  margin:0 16px 10px;padding:0 12px;border:1px solid var(--line);border-radius:10px;
+  display:flex;align-items:center;gap:8px;background:var(--panel-soft);
+}
+.search input{width:100%;height:36px;background:transparent;border:0;outline:none;font-size:12px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:4px;margin:0 16px 8px}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;
+  font-size:10.5px;font-weight:700;background:var(--panel-soft);border:1px solid var(--line);margin:2px;
+}
+.chip.cyan{background:rgba(6,182,212,.16);color:#67e8f9;border-color:rgba(6,182,212,.35)}
+.chip.purple{background:rgba(139,92,246,.16);color:#c4b5fd;border-color:rgba(139,92,246,.35)}
+.chip.pink{background:rgba(236,72,153,.16);color:#f472b6;border-color:rgba(236,72,153,.35)}
+.chip.amber{background:rgba(245,158,11,.16);color:#fcd34d;border-color:rgba(245,158,11,.35)}
+body.light-mode .chip.cyan{color:#0369a1}
+body.light-mode .chip.purple{color:#6d28d9}
+body.light-mode .chip.pink{color:#be185d}
+body.light-mode .chip.amber{color:#b45309}
+
+.list{flex:1;overflow-y:auto;padding:0 14px 14px;scrollbar-width:thin}
+.list-group{font:800 10px "Orbitron",monospace;color:var(--cyan);letter-spacing:1.5px;margin:12px 6px 6px}
+.row{
+  width:100%;text-align:left;display:flex;align-items:center;gap:10px;
+  padding:10px 10px;border-radius:12px;background:transparent;border:1px solid transparent;
+  border-bottom:1px solid var(--line);margin-bottom:3px;
+}
+.row:hover{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.28);transform:translateX(2px)}
+.row .idx{
+  width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  font:800 11px "JetBrains Mono",monospace;color:#fff;flex-shrink:0;
+}
+.row .copy{flex:1;min-width:0}
+.row strong{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row small{display:block;font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.45}
+.side-foot{padding:10px 18px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+/* Left Detail Card */
+.card{
+  position:absolute;left:20px;top:256px;bottom:92px;width:360px;z-index:11;
+  border-radius:22px;padding:22px;overflow-y:auto;scrollbar-width:thin;
+}
+.card .close{
+  position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;font-size:18px;padding:0;
+}
+.card .kicker{font:800 10px "Orbitron",monospace;letter-spacing:1.8px;color:var(--cyan)}
+.card h2{font-size:21px;font-weight:900;margin:6px 32px 8px 0;line-height:1.35}
+.card .lead{font-size:12.5px;line-height:1.75;color:var(--text);margin:10px 0 14px}
+.card h3{font-size:12.5px;font-weight:800;color:var(--cyan);margin:16px 0 8px;letter-spacing:.5px}
+.card ul{padding-left:18px;font-size:12px;line-height:1.75;color:var(--muted)}
+.card .info-box{
+  padding:12px 14px;border-radius:14px;background:var(--panel-soft);
+  border:1px solid var(--line);font-size:11.5px;line-height:1.7;margin:10px 0;
+}
+.card .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.card .spec-item{background:var(--panel-soft);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.card .spec-item small{display:block;font-size:10px;color:var(--muted)}
+.card .spec-item b{font-size:12px;color:var(--text)}
+
+/* Visual Showcase Banner inside Card */
+.card-visual{
+  margin:12px 0;border-radius:16px;padding:16px;
+  background:linear-gradient(135deg,rgba(6,182,212,.22),rgba(139,92,246,.25),rgba(236,72,153,.2));
+  border:1px solid rgba(255,255,255,.16);position:relative;overflow:hidden;
+}
+.card-visual .vis-icon{font-size:34px;margin-bottom:6px;display:block}
+.card-visual .vis-tag{font:800 10px "Orbitron",monospace;color:var(--cyan);letter-spacing:1.5px}
+.card-visual .vis-title{font-size:14px;font-weight:800;margin-top:2px}
+.card-visual .vis-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* Bottom HUD */
+.hud{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:18px;white-space:nowrap;
+}
+.hud .mode-box{padding-right:12px;margin-right:4px;border-right:1px solid var(--line)}
+.hud .mode-box b{display:block;font:800 14px "Orbitron",monospace;color:var(--cyan)}
+.hud .mode-box small{font-size:10px;color:var(--muted)}
+.hud button{font-size:11px;font-weight:700;padding:6px 10px;border-radius:10px;background:transparent;border-color:transparent}
+.hud button:hover{background:rgba(6,182,212,.15)}
+.hud button.active{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff}
+
+/* 3D CSS2D Floating Pills */
+.pill{
+  pointer-events:auto;white-space:nowrap;padding:5px 11px;border-radius:99px;
+  background:rgba(15,23,42,.88);color:#f8fafc;border:1px solid rgba(255,255,255,.22);
+  border-left:3.5px solid var(--pill-color,var(--cyan));
+  box-shadow:0 6px 18px rgba(0,0,0,.45);font-size:10.5px;font-weight:700;
+  display:flex;align-items:center;gap:6px;transition:transform .16s,background .16s;
+}
+body.light-mode .pill{background:rgba(255,255,255,.92);color:#0f172a;border-color:rgba(15,23,42,.15);border-left:3.5px solid var(--pill-color,var(--cyan))}
+.pill:hover{transform:translateY(-2px) scale(1.05);z-index:8}
+.pill.selected{background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;border-color:#fff}
+.pill.dim{opacity:.38}
+.pill.compact span{display:none}
+.pill.npc-pill{border-left-color:var(--amber);background:rgba(30,27,75,.9)}
+body.light-mode .pill.npc-pill{background:#fef3c7;color:#78350f}
+
+.zone-label{
+  font:800 10px "Orbitron","Noto Sans TC",sans-serif;letter-spacing:2px;
+  color:rgba(103,232,249,.85);text-shadow:0 2px 8px rgba(0,0,0,.85);white-space:nowrap;
+}
+body.light-mode .zone-label{color:#0369a1;text-shadow:0 1px 3px #fff}
+
+/* Quiz options */
+.quiz-btn{
+  display:block;width:100%;text-align:left;padding:10px 12px;margin:6px 0;
+  border-radius:10px;background:var(--panel-soft);border:1px solid var(--line);font-size:12px;line-height:1.5;
+}
+.quiz-btn:hover:not(:disabled){border-color:var(--cyan);background:rgba(6,182,212,.14)}
+.quiz-feedback{padding:11px 13px;border-radius:12px;background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.35);font-size:12px;line-height:1.65;margin-top:10px}
+
+.legal{position:absolute;left:22px;bottom:18px;z-index:3;font-size:10px;color:var(--muted);line-height:1.6;pointer-events:none}
+[hidden]{display:none!important}
+
+@media (max-width:1100px){
+  .quick-nav .zone-btn{display:none}
+  .sidebar{width:310px}
+  .card{width:320px}
+}
+@media (max-width:800px){
+  .quick-nav,.legal{display:none}
+  .brand{top:12px;left:12px;width:260px;padding:12px 14px}
+  .tools{top:148px;left:12px;width:260px}
+  .sidebar,.card{left:0;right:0;bottom:0;top:auto;width:100%;height:50dvh;border-radius:20px 20px 0 0}
+}
+</style>
+</head>
+<body>
+
+<main id="world" aria-label="中國科技大學數位多媒體設計系 3D 互動元宇宙"></main>
+<div id="labels"></div>
+
+<!-- Brand Header -->
+<header class="brand glass">
+  <div class="kicker"><span>◈</span> CUTE DMD METAVERSE · EST. 2008</div>
+  <h1>中國科大・數位多媒體設計系</h1>
+  <p>Department of Digital Multimedia Design<br>美學藝術 × 資訊科技 × 遊戲動畫 × XR與AI</p>
+  <div class="brand-badges">
+    <span class="badge">台北萬芳校區</span>
+    <span class="badge purple">新竹湖口校區</span>
+    <span class="badge">紅點設計獎肯定</span>
+  </div>
+</header>
+
+<!-- Top Quick Zone & Camera Navigation -->
+<nav class="quick-nav glass" aria-label="快速空間導覽">
+  <button class="zone-btn" data-zone="plaza">🌟 數媒創客廣場</button>
+  <button class="zone-btn" data-zone="taipei">🏢 台北・傳賢/格致樓</button>
+  <button class="zone-btn" data-zone="hsinchu">🏛 新竹・日新/啟我樓</button>
+  <button class="zone-btn" data-zone="pavilion">🎮 四大專業領域館</button>
+  <i class="sep zone-btn"></i>
+  <button class="cam-btn" data-cam="left" title="向左平移 (A)">←</button>
+  <button class="cam-btn" data-cam="up" title="向前平移 (W)">↑</button>
+  <button class="cam-btn" data-cam="down" title="向後平移 (S)">↓</button>
+  <button class="cam-btn" data-cam="right" title="向右平移 (D)">→</button>
+  <button class="cam-btn" data-cam="zoomin" title="放大">＋</button>
+  <button class="cam-btn" data-cam="zoomout" title="縮小">－</button>
+</nav>
+
+<!-- Left Tools Bar -->
+<nav class="tools glass" aria-label="工具列">
+  <button id="btn-home" title="全景視角">⌂ 全景</button>
+  <button id="btn-tour" title="自動導覽">↗ 導覽</button>
+  <button id="btn-quests" title="數媒創客護照">★ 闖關 <span id="quest-count">0/6</span></button>
+  <button id="btn-music" class="active" aria-pressed="true" title="合成器背景音樂 (M)">♫ 電音</button>
+  <a class="btn-link" href="https://dmd.cute.edu.tw/" target="_blank" rel="noopener" title="開啟數媒系官網">🌐 系官網 ↗</a>
+</nav>
+
+<!-- Left Detail Card -->
+<aside id="card" class="card glass" hidden aria-label="場域與課程詳情"></aside>
+
+<!-- Right Sidebar -->
+<aside id="sidebar" class="sidebar glass" aria-label="數媒系探索艙">
+  <div class="side-head">
+    <div class="kicker">EXPLORE DMD.CUTE.EDU.TW</div>
+    <h2>跨域數媒・即戰力搖籃</h2>
+    <p>點選 3D 實驗室、四大專業館、師資或得獎作品，探索數媒系完整學習生態系。</p>
+  </div>
+  <nav class="tabs">
+    <button data-tab="spaces" class="active">3D 實驗室</button>
+    <button data-tab="tracks">四大課程軸</button>
+    <button data-tab="faculty">師資陣容</button>
+    <button data-tab="awards">競賽榮譽</button>
+    <button data-tab="roadmap">四年專題</button>
+    <button data-tab="quests">創客護照</button>
+  </nav>
+  <label class="search">
+    <span>⌕</span>
+    <input id="search" placeholder="搜尋動捕、7.1.4錄音室、遊戲、動畫、老師…" aria-label="搜尋數媒系內容"/>
+  </label>
+  <div id="filter-bar" class="filter-chips"></div>
+  <div id="list" class="list"></div>
+  <footer class="side-foot">
+    <span>資料依據：<a href="https://dmd.cute.edu.tw/" target="_blank" rel="noopener">dmd.cute.edu.tw ↗</a></span>
+    <span>台北／新竹雙校區</span>
+  </footer>
+</aside>
+
+<!-- Bottom HUD -->
+<section class="hud glass" aria-label="場景情境控制">
+  <div class="mode-box">
+    <b id="scene-clock">CYBER NEON</b>
+    <small id="scene-sub">次世代虛實光影</small>
+  </div>
+  <button data-lighting="cyber" class="active">⚡ 賽博霓虹</button>
+  <button data-lighting="studio">☀ 晨間校園</button>
+  <button data-lighting="sunset">🌅 展演暮光</button>
+  <button id="toggle-people" class="active" aria-pressed="true">♙ 師生動態</button>
+  <button id="toggle-links" class="active" aria-pressed="true">⌁ 專業連結</button>
+  <button id="toggle-labels" class="active" aria-pressed="true">▱ 空間標籤</button>
+  <button id="toggle-bird" aria-pressed="false">⌘ 鳥瞰</button>
+</section>
+
+<p class="legal">
+  中國科技大學 數位多媒體設計系 3D 互動導覽<br>
+  左鍵旋轉 · 右鍵／WASD平移 · 滾輪縮放 · 點選建築與角色探索
+</p>
+
+<script type="module">
+import * as T from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+// ============================================================================
+// 1. MASTER DATASET REFERENCING https://dmd.cute.edu.tw/
+// ============================================================================
+const DMD = {
+  tracks: [
+    {
+      id: 'game',
+      name: '數位遊戲設計領域',
+      en: 'GAME DESIGN & ENGINE',
+      color: '#06b6d4',
+      chip: 'cyan',
+      icon: '🎮',
+      summary: '從遊戲企劃、角色與場景美術到 Unreal / Unity 遊戲引擎實作，培育具備獨立開發與商業專案能力之遊戲人才。',
+      courses: ['遊戲企劃與設計', '遊戲美術設計', '次世代遊戲角色與場景', 'Unreal / Unity 遊戲引擎應用創作', '遊戲視覺特效設計', '桌遊設計與實作', '電競節目製播與團隊管理'],
+      careers: ['遊戲企劃師', '3D 遊戲美術設計師', 'Unity / Unreal 技術美術 (TA)', '遊戲特效師', '電競製播與賽事企劃'],
+      tools: ['Unreal Engine 5', 'Unity 3D', 'Substance 3D Painter', 'ZBrush', 'C# / Blueprints']
+    },
+    {
+      id: 'anim',
+      name: '3D 電腦動畫與視效領域',
+      en: '3D ANIMATION & VFX',
+      color: '#8b5cf6',
+      chip: 'purple',
+      icon: '🎬',
+      summary: '結合故事分鏡、2D/3D 角色動畫、數位雕塑與光學動作捕捉，打造國際影展與紅點設計獎等級之動畫創作。',
+      courses: ['故事腳本與動態分鏡', '2D / 3D 電腦動畫', '角色骨架綁定與表演動畫', '高階數位雕塑 (ZBrush)', '動作捕捉與數位視效合成', '影視後期剪輯與調光'],
+      careers: ['3D 角色／模型動畫師', '動作捕捉技術指導', 'VFX 視覺特效合成師', '分鏡腳本師', '影視後期導演'],
+      tools: ['Autodesk Maya', 'Blender', 'ZBrush', 'MotionBuilder', 'After Effects / Nuke']
+    },
+    {
+      id: 'xr_ai',
+      name: 'XR 虛實整合與生成式 AI 領域',
+      en: 'XR METAVERSE & GEN-AI',
+      color: '#ec4899',
+      chip: 'pink',
+      icon: '🥽',
+      summary: '掌握 VR/AR/MR 空間互動、VTuber 虛擬網紅即時直播、多通道弧形投影與生成式 AI 數位創作流程。',
+      courses: ['虛擬實境 (VR) 與擴增實境 (AR) 應用', 'VTuber 虛擬網紅直播與角色互動', 'AIGC 生成式 AI 視覺與腳本創作', '互動感測與光雕投影設計', '新媒體互動藝術與策展實務'],
+      careers: ['XR 互動開發工程師', 'VTuber 技術總監與直播企劃', 'AI 數位內容創作師', '新媒體互動策展人'],
+      tools: ['Meta Quest / VIVE XR', 'OptiTrack / Live2D', 'Stable Diffusion / ComfyUI', 'TouchDesigner']
+    },
+    {
+      id: 'audio',
+      name: '數位音樂與全景聲成音領域',
+      en: 'DOLBY ATMOS & SOUND DESIGN',
+      color: '#f59e0b',
+      chip: 'amber',
+      icon: '🎵',
+      summary: '依托業界標準 7.1.4 全景聲環繞錄音室，培訓遊戲動態音效、動畫配樂、Foley 擬音與流行音樂成音工程。',
+      courses: ['數位音樂創作與編曲', '遊戲與動畫配樂設計', '7.1.4 全景聲成音與混音工程', '錄音室實務與麥克風收音技術', 'AI 輔助音樂生成與聲音設計'],
+      careers: ['遊戲音效設計師 (Sound Designer)', '影視動畫配樂作曲家', '錄音與混音工程師', 'Foley 擬音師'],
+      tools: ['Pro Tools', 'Logic Pro / Cubase', '7.1.4 Dolby Atmos', 'Neumann / Neve 硬體鏈', 'FMOD / Wwise']
+    }
+  ],
+
+  sites: [
+    // Central Hub
+    {
+      id: 'dmd_arena',
+      name: '數媒創客元宇宙廣場',
+      sub: 'DMD Metaverse Central Arena',
+      zone: 'plaza',
+      track: 'xr_ai',
+      pos: [0, 0],
+      size: [3.2, 2.2, 3.2],
+      model: 'arena',
+      color: '#06b6d4',
+      icon: '🌟',
+      room: '雙校區跨域核心舞台',
+      desc: '中國科技大學數位多媒體設計系（2008年創立）的核心象徵舞台。整合「美學藝術」、「程式邏輯」與「聲音工程」，展現系所從大一基礎到四年級國際得獎專題的創作能量。',
+      specs: [['創立年份', '民國 97 年 (2008)'], ['核心定位', '遊戲 × 動畫 × XR × 音效'], ['校區編制', '台北萬芳 ＋ 新竹湖口'], ['教學方針', '做中學・產學合一即戰力']],
+      highlights: ['定期舉辦「CUTe 盃遊戲美術設計創意大賽」與角色設計競賽', '串聯全系一至四年級「專題製作」主軸成果發表', '支援新一代設計展、放視大賞與國際影展校內預展']
+    },
+    // Taipei Campus (West Wing)
+    {
+      id: 'tp_office',
+      name: '台北系辦公室（傳賢樓 202）',
+      sub: 'Taipei Dept. Office · Chuanxian 202',
+      zone: 'taipei',
+      track: 'game',
+      pos: [-5.6, -2.6],
+      size: [2.4, 1.5, 1.6],
+      model: 'tower',
+      color: '#38bdf8',
+      icon: '🏢',
+      room: '台北校區・傳賢樓（中正樓）202室',
+      desc: '台北萬芳校區數媒系行政與師生交流中樞。提供專業器材借用、企業實習媒合、證照輔導報名，並落實全系教師「導師與留輔時間（Office Hour）」一對一職涯與課業指導。',
+      specs: [['所在位置', '台北校區 傳賢樓 202 室'], ['服務項目', '器材借用／實習媒合／留輔'], ['學制涵蓋', '日間部四技／進修部'], ['交通優勢', '緊鄰台北捷運萬芳醫院站']],
+      highlights: ['落實 Office Hour 留輔制度，手把手指導作品集與專題', '媒合國內外知名遊戲、動畫與影視後製企業實習', '統籌系學會活動、大師講座與產學合作專案']
+    },
+    {
+      id: 'tp_mocap',
+      name: '動作擷取與數位視效實驗室',
+      sub: 'Motion Capture & VFX Studio · 707',
+      zone: 'taipei',
+      track: 'anim',
+      pos: [-6.2, 1.2],
+      size: [2.8, 1.7, 2.2],
+      model: 'mocap',
+      color: '#8b5cf6',
+      icon: '🕺',
+      room: '台北校區・傳賢樓 707 室',
+      desc: '配備高階光學式動作捕捉系統（MotionAnalysis Raptor-H 高速紅外線攝影機陣列、Cortex 主控軟體與 MotionBuilder 即時編輯系統）及綠幕虛擬攝影棚，精準捕捉全身、臉部與手指表演。',
+      specs: [['核心硬體', 'MotionAnalysis Raptor-H'], ['即時軟體', 'Cortex + MotionBuilder'], ['應用場景', '3D 動畫表演／VR 遊戲／VTuber'], ['空間配置', '光學動捕區 ＋ 虛擬綠幕棚']],
+      highlights: ['支援演員全身與臉部動態即時映射到 3D 遊戲與動畫角色', '結合 VTuber 虛擬網紅直播技術，進行即時虛實互動展演', '多部全國技專電腦動畫競賽獲獎作品之動作誕生地']
+    },
+    {
+      id: 'tp_audio',
+      name: '7.1.4 全景聲環繞錄音室',
+      sub: '7.1.4 Dolby Atmos Recording Studio',
+      zone: 'taipei',
+      track: 'audio',
+      pos: [-3.2, 3.4],
+      size: [2.5, 1.5, 1.9],
+      model: 'audio',
+      color: '#f59e0b',
+      icon: '🎧',
+      room: '台北校區・忠孝樓／傳賢樓專業錄音空間',
+      desc: '業界高規格 7.1.4 聲道環繞音效錄音室，配備大型數位混音控台、英國 Neve 麥克風前級、德國 Neumann 頂級電容麥克風與獨立錄音間（Booth），亦是「中國科大音效團隊」產學基地。',
+      specs: [['聲道規格', '7.1.4 全景聲環繞聲道'], ['頂級硬體', 'Neumann 麥克風 + Neve 前級'], ['核心軟體', 'Pro Tools / Logic Pro'], ['特色組織', '中國科大專業音效產學團隊']],
+      highlights: ['由知名音樂製作人領軍，選拔學生組成「中國科大音效團隊」', '長期承接商業遊戲、電視台、動畫影展與大型展演配樂成音', '結合 Foley 擬音實作與 AI 音樂生成教學']
+    },
+    {
+      id: 'tp_lab503',
+      name: '數位多媒體創作實驗室 (503)',
+      sub: 'Multimedia & Game Dev Lab · 503',
+      zone: 'taipei',
+      track: 'game',
+      pos: [-3.4, -0.4],
+      size: [2.3, 1.4, 1.6],
+      model: 'lab',
+      color: '#06b6d4',
+      icon: '💻',
+      room: '台北校區・傳賢樓 503 室',
+      desc: '配置高階 RTX 繪圖工作站與 Mac 雙系統創作環境，安裝完整 Unreal Engine、Unity、Maya、ZBrush 與 Adobe Creative Cloud，供學生進行遊戲開發、次世代美術與影音剪輯。',
+      specs: [['工作站配置', '高階 RTX GPU + Mac 雙系統'], ['核心引擎', 'Unreal Engine 5 / Unity'], ['美術套件', 'Maya / ZBrush / Substance'], ['主要用途', '遊戲開發、數位雕塑、剪輯']],
+      highlights: ['全天候支援各年級專題團隊進行高負載光追渲染與引擎打包', '輔導考取國際專業設計與遊戲引擎相關證照', '舉辦系內 Game Jam 與業師協同實作工作坊']
+    },
+    {
+      id: 'tp_gezhi',
+      name: '格致樓・數位展演與圖書中心',
+      sub: 'Gezhi Building & Exhibition Center',
+      zone: 'taipei',
+      track: 'xr_ai',
+      pos: [-7.2, -5.2],
+      size: [3.0, 2.1, 1.8],
+      model: 'gezhi',
+      color: '#ec4899',
+      icon: '🏛',
+      room: '台北校區・格致樓（含 2F 圖書格致館＆國際會議廳）',
+      desc: '台北校區極具現代科技感的門面大樓，設有直達二樓「格致館」圖書數位資源區之電扶梯，以及舉辦系展、國際大師講座、CUTe 盃頒獎典禮與證照檢定之專業空間。',
+      specs: [['建築特色', '現代科技立面＋跨層電扶梯'], ['2F 空間', '格致館（數位圖書與媒材庫）'], ['展演空間', '大型國際會議廳＆數位展廳'], ['代表活動', '系展預展／大師講座／CUTe盃']],
+      highlights: ['畢業專題前往「新一代設計展」與「放視大賞」前之校內盛大審查展場', '匯集國內外動畫導演、遊戲製作人進行專題演講', '提供豐富設計畫冊、國際影展視聽館藏與討論室']
+    },
+
+    // Hsinchu Campus (East Wing)
+    {
+      id: 'hc_office',
+      name: '新竹系辦公室（日新樓 408）',
+      sub: 'Hsinchu Dept. Office · Rixin 408',
+      zone: 'hsinchu',
+      track: 'anim',
+      pos: [5.6, -2.6],
+      size: [2.4, 1.5, 1.6],
+      model: 'tower',
+      color: '#a855f7',
+      icon: '🏫',
+      room: '新竹校區・日新樓 408 室',
+      desc: '新竹湖口校區數媒系核心樞紐，串聯日新樓多間高階 3D 動畫、OptiTrack 虛實整合實驗室與啟我大樓弧形投影空間，提供寬敞創作工坊與產學研發環境。',
+      specs: [['所在位置', '新竹校區 日新樓 408 室'], ['重點空間', '日新 301 / 306 專業實驗室'], ['特色優勢', '大型沉浸式空間與專題工坊'], ['跨域連結', '桃竹苗科技與文創產學合作']],
+      highlights: ['擁有寬敞獨立專題製作空間，支援大型 VR/MR 體感設備架設', '與台北校區資源互通、師資共授，共享業界大師講座與競賽輔導']
+    },
+    {
+      id: 'hc_xr301',
+      name: '3D 虛實整合實驗室（日新 301）',
+      sub: 'OptiTrack 3D XR Integration Lab · 301',
+      zone: 'hsinchu',
+      track: 'xr_ai',
+      pos: [6.2, 1.2],
+      size: [2.8, 1.7, 2.2],
+      model: 'mocap',
+      color: '#ec4899',
+      icon: '🥽',
+      room: '新竹校區・日新樓 301 室',
+      desc: '建置 OptiTrack 高階光學動作捕捉系統與多人大空間 VR/MR 走動式互動環境，結合頭戴式顯示器、體感回饋裝置與虛擬攝影機，開發元宇宙與沉浸式展覽作品。',
+      specs: [['動捕系統', 'OptiTrack 高階光學動捕陣列'], ['互動技術', '多人大空間 VR / AR / MR'], ['整合引擎', 'Unreal / Unity OpenXR'], ['應用領域', '元宇宙互動、虛擬偶、體感遊戲']],
+      highlights: ['支援多人同場域即時定位與全身骨架追蹤', '結合虛擬攝影機（Virtual Camera）預覽導演運鏡視角', '培育新一代空間運算（Spatial Computing）開發人才']
+    },
+    {
+      id: 'hc_anim306',
+      name: '三維影音電腦動畫實驗室 (306)',
+      sub: '3D Animation & Sculpting Lab · 306',
+      zone: 'hsinchu',
+      track: 'anim',
+      pos: [3.4, -0.4],
+      size: [2.3, 1.4, 1.6],
+      model: 'lab',
+      color: '#8b5cf6',
+      icon: '🎨',
+      room: '新竹校區・日新樓 306 室',
+      desc: '專為 3D 電腦動畫、高階數位雕塑與次世代影視特效打造的專業教室，配備高精準繪圖數位板與高速算圖工作站，孕育多部國內外動畫大獎作品。',
+      specs: [['專業定位', '3D 角色動畫／數位雕塑／VFX'], ['核心設備', '高階繪圖螢幕＋算圖工作站'], ['代表榮譽', '德國紅點獎／全國技專動畫優勝'], ['創作流程', '分鏡→建模→綁定→動態→合成']],
+      highlights: ['誕生《AI/Lover》、《AI人》、《Break clown 丑角》、《夢迴》等獲獎佳作', '從概念美術、ZBrush 高模雕刻到 PBR 材質貼圖完整實作']
+    },
+    {
+      id: 'hc_qiwo',
+      name: '啟我大樓・多通道弧形投影廳',
+      sub: 'Qiwo Immersive Projection Dome',
+      zone: 'hsinchu',
+      track: 'xr_ai',
+      pos: [7.0, -5.2],
+      size: [3.0, 2.0, 2.0],
+      model: 'dome',
+      color: '#10b981',
+      icon: '🌐',
+      room: '新竹校區・啟我大樓展演與弧形投影空間',
+      desc: '配備多通道無縫融接弧形投影系統與大型國際會議展演廳，提供沉浸式新媒體光雕藝術、互動投影測試，以及舉辦國際動畫影展與跨校競賽之旗艦場域。',
+      specs: [['視覺系統', '多通道弧形無縫融接投影'], ['空間機能', '沉浸式光雕／大型國際影展廳'], ['互動技術', '雷達感測／深度攝影機互動'], ['展演類型', '新媒體藝術、動畫首映會']],
+      highlights: ['讓學生作品跳脫平面螢幕，直接於大型環形劇場進行沉浸式策展', '結合聲光音效與即時粒子運算，打造美術館等級之互動體驗']
+    },
+
+    // Thematic Pavilions (North & South Wings)
+    {
+      id: 'pav_game',
+      name: '數位遊戲與電競創客館',
+      sub: 'Game Design & Esports Pavilion',
+      zone: 'pavilion',
+      track: 'game',
+      pos: [-2.8, -5.6],
+      size: [2.4, 1.6, 2.0],
+      model: 'pavilion',
+      color: '#06b6d4',
+      icon: '🕹',
+      room: '核心專業領域 I｜數位遊戲設計',
+      desc: '展示數媒系於「台灣原創遊戲大賞」、「放視大賞」與「全國實務專題競賽」之獲獎遊戲。涵蓋 PC 單機、行動遊戲、VR 體感遊戲、原創桌遊與電競賽事轉播製播。',
+      specs: [['主軸能力', '企劃機制 × 次世代美術 × 引擎程式'], ['重點賽事', '放視大賞／台灣原創遊戲大賞'], ['特色課程', '電競節目製播、遊戲特效、桌遊'], ['開發引擎', 'Unreal Engine 5 / Unity']],
+      highlights: ['大二至大四跨組別團隊合作，模擬真實遊戲工作室開發流程', '每年於新一代設計展與松山文創園區／高雄放視大賞實機展出']
+    },
+    {
+      id: 'pav_anim',
+      name: '國際紅點與動畫影展館',
+      sub: 'Red Dot & International Animation Hall',
+      zone: 'pavilion',
+      track: 'anim',
+      pos: [2.8, -5.6],
+      size: [2.4, 1.6, 2.0],
+      model: 'pavilion',
+      color: '#8b5cf6',
+      icon: '🏆',
+      room: '核心專業領域 II｜3D 電腦動畫與視效',
+      desc: '匯集數媒系歷年榮獲「德國紅點設計獎（Red Dot Award）」與「全國技專校院電腦動畫競賽」優勝之經典作品，展現劇本敘事、角色表演與視覺特效實力。',
+      specs: [['國際肯定', '德國紅點設計獎 Red Dot Award'], ['國內指標', '全國技專校院電腦動畫競賽優勝'], ['代表作品', '《AI/Lover》《AI人》《夢迴》等'], ['核心技術', '2D/3D混合、動捕、非寫實渲染']],
+      highlights: ['多部學生動畫代表台灣入圍國際動畫影展', '由曾任職知名動畫公司與電視台之專兼任名師聯合指導']
+    },
+    {
+      id: 'pav_vtuber',
+      name: 'VTuber 虛擬網紅與 AI 創客館',
+      sub: 'VTuber Streaming & Generative AI Hub',
+      zone: 'pavilion',
+      track: 'xr_ai',
+      pos: [3.2, 3.4],
+      size: [2.5, 1.5, 1.9],
+      model: 'usr',
+      color: '#10b981',
+      icon: '🤖',
+      room: '核心專業領域 III｜虛擬網紅直播 × 生成式 AI',
+      desc: '結合高階臉部與全身動作捕捉、Live2D / 3D 虛擬化身、即時虛擬導播系統與生成式 AI（AIGC）輔助美術、分鏡與多媒體創作，培育新世代元宇宙自媒體與 AI 創作人才。',
+      specs: [['核心技術', '即時臉部/全身動捕 × 虛擬導播'], ['AI 應用', 'AIGC 概念美術／影像生成／配樂'], ['角色開發', 'Live2D / VRM 3D 虛擬化身建模'], ['產學接軌', '大四企業實習與新媒體專案']],
+      highlights: ['一站式完成「虛擬角色設計 → 骨架綁定 → 動捕直播 → 成音導播」', '導入最新生成式 AI 工具鏈，大幅提升概念設計與專題開發效率']
+    }
+  ],
+
+  faculty: [
+    { id: 'f_hsu', name: '許允聖', title: '副教授兼系主任', track: 'game', site: 'tp_office', pos: [-4.6, -1.5], color: '#06b6d4', specialty: '數位遊戲設計、多媒體互動系統、虛實整合應用、系務與產學發展領航', quote: '歡迎來到中國科大數媒系！我們結合美學藝術與資訊科技，透過四年扎實的專題實作與頂級實驗室，陪你把創意變成改變世界的作品。' },
+    { id: 'f_liao', name: '廖逸群', title: '助理教授兼副主任', track: 'anim', site: 'hc_office', pos: [4.6, -1.5], color: '#a855f7', specialty: '3D 電腦動畫、視覺特效設計、數位影視創作、跨校區教學資源整合', quote: '無論在台北或新竹校區，數媒系都為同學準備了對接業界的動捕、錄音室與高階算圖環境，讓每個劇本與角色都能生動活現。' },
+    { id: 'f_yang', name: '楊東華', title: '副教授', track: 'xr_ai', site: 'dmd_arena', pos: [-1.4, 1.3], color: '#ec4899', specialty: '數位多媒體設計、文化創意與數位策展、互動媒體設計與規劃', quote: '在數媒系，我們將創意敘事結合最新互動科技，讓你的作品在各大展演舞台發光發熱！' },
+    { id: 'f_chen', name: '陳敏彬', title: '副教授', track: 'game', site: 'tp_lab503', pos: [-2.4, -0.2], color: '#38bdf8', specialty: '遊戲企劃與系統設計、數位內容開發、互動媒體程式應用', quote: '好的遊戲作品來自嚴謹的核心機制與反覆測試，在 503 實驗室裡我們一起打磨出最好玩的體驗。' },
+    { id: 'f_lee', name: '李瑞翔', title: '副教授', track: 'anim', site: 'hc_anim306', pos: [2.4, -0.2], color: '#8b5cf6', specialty: '電腦動畫創作、角色造型與視覺藝術、數位美學構成', quote: '從一筆一畫的分鏡到 3D 角色表演，美感與敘事永遠是打動觀眾與國際評審的關鍵。' },
+    { id: 'f_sun', name: '孫弘', title: '副教授', track: 'xr_ai', site: 'hc_xr301', pos: [5.0, 1.6], color: '#ec4899', specialty: '虛擬實境 (VR/AR)、3D 虛實整合、互動多媒體系統', quote: '戴上頭顯、走進 OptiTrack 空間，你設計的不只是一個畫面，而是一整個可以走進去探索的元宇宙。' },
+    { id: 'f_chang', name: '張書維', title: '副教授', track: 'game', site: 'pav_game', pos: [-1.8, -4.4], color: '#06b6d4', specialty: '數位遊戲設計、人機互動、新媒體科技應用與專題指導', quote: '透過跨域團隊合作與全國競賽歷練，讓你的畢業專題成為進入遊戲大廠最亮眼的名片！' },
+    { id: 'f_audio', name: '專業成音與視效師資群', title: '吳冠雄／陳奕宏等專技教師', track: 'audio', site: 'tp_audio', pos: [-2.2, 2.6], color: '#f59e0b', specialty: '7.1.4 全景聲錄音工程、影視遊戲配樂、光學動作捕捉與業界實務協同教學', quote: '在 7.1.4 全景聲錄音室與動捕棚，我們直接用業界標準帶你參與真實商業配樂與特效專案！' }
+  ],
+
+  awards: [
+    { title: '德國紅點設計獎 Red Dot Award 獲獎', work: '《AI/Lover》等學生專題創作', cat: '國際頂尖設計大獎', year: '近年代表榮譽', site: 'pav_anim', desc: '結合人工智慧議題與精湛視覺敘事，於全球數千件參賽作品中脫穎而出，榮獲德國紅點設計大獎肯定。' },
+    { title: '全國技專校院電腦動畫競賽 優勝／佳作', work: '《AI人》、《Break clown 丑角》、《夢迴》', cat: '國內指標動畫大賽', year: '歷屆常勝團隊', site: 'hc_anim306', desc: '於教育部主辦之全國技專電腦動畫競賽屢奪優勝，並獲推薦代表台灣參與國際動畫影展競技。' },
+    { title: '放視大賞 Vision Get Wild & 新一代設計展', work: '遊戲開發組、3D動畫組、跨領域組多項大獎', cat: '全國數位內容旗艦展賽', year: '年度畢業專題成果', site: 'pav_game', desc: '每年率領應屆畢業專題團隊進軍高雄放視大賞與台北新一代設計展，屢獲遊戲類與動畫類獎項及企業青睞。' },
+    { title: '台灣原創遊戲大賞 & 全國實務專題競賽', work: '原創獨立遊戲與 VR 體感互動專題', cat: '產學與遊戲開發競賽', year: '遊戲創作代表榮譽', site: 'tp_lab503', desc: '展現從企劃、美術到 Unreal/Unity 引擎整合的完整開發實力，獲產業界評審高度肯定。' },
+    { title: 'CUTe 盃遊戲美術設計創意大賽', work: '全系暨全國高中職角色與場景設計盛事', cat: '系所品牌競賽', year: '年度定期舉辦', site: 'tp_gezhi', desc: '由中國科大數媒系主辦之指標性美術賽事，激發新世代在 2D/3D 角色設定與概念美術之創作能量。' },
+    { title: '中國科大音效團隊 商業與展演產學實績', work: '大型遊戲配樂、電視台成音、大型展演音效', cat: '7.1.4 全景聲產學合作', year: '持續執行中', site: 'tp_audio', desc: '由系上錄音室培訓之菁英學生團隊，直接參與業界真實配樂、Foley 擬音與環繞成音專案。' }
+  ],
+
+  roadmap: [
+    { grade: '大一 Freshman', title: '美學與數位基礎築底', focus: '素描與色彩、設計基礎、分鏡腳本、2D/3D 基礎工具、程式邏輯入門、數位聲音概論', output: '個人基礎造型、概念設定集與短篇分鏡作品', site: 'tp_gezhi' },
+    { grade: '大二 Sophomore', title: '核心技術與小型專題實作', focus: '3D 建模與骨架綁定、遊戲引擎基礎 (Unity/UE)、數位雕塑 (ZBrush)、錄音室收音與編曲、二下專題製作(一)', output: '完成首部團隊小型遊戲原型或 3D 短篇動畫', site: 'tp_lab503' },
+    { grade: '大三 Junior', title: '高階實驗室整合與畢業專題開發', focus: '光學動作捕捉實務、7.1.4 全景聲混音、VR/AR 虛實整合、次世代PBR美術、三上/三下專題製作(二)(三)', output: '產出具備參加放視大賞、紅點獎與全國競賽水準之完整專題作品', site: 'tp_mocap' },
+    { grade: '大四 Senior', title: '國際參展、產學實習與職涯接軌', focus: '新一代設計展／放視大賞策展、校外企業實習、專業證照總檢、個人作品集與履歷健檢', output: '國內外大展展出、考取專業證照並無縫接軌數位娛樂產業就業', site: 'dmd_arena' }
+  ],
+
+  quests: [
+    {
+      id: 'q_intro',
+      title: '任務 01｜認識中國科大數媒系雙校區核心',
+      badge: '🌟 數媒領航員',
+      targetSite: 'dmd_arena',
+      q: '中國科技大學數位多媒體設計系（2008年成立）的課程與空間主要涵蓋哪四大核心專業領域？',
+      options: [
+        '數位遊戲設計、3D電腦動畫、數位音樂音效、新媒體影音與XR虛實整合',
+        '僅限平面海報印刷與傳統紙本排版',
+        '純硬體晶圓製造與傳統機械車床加工',
+        '僅開設單一會計稅務課程'
+      ],
+      ans: 0,
+      explain: '答對了！中國科大數媒系結合「數位遊戲」、「電腦動畫」、「數位音樂音效」與「新媒體影音/XR/AI」四大領域，在台北與新竹雙校區培育全方位數位內容人才！'
+    },
+    {
+      id: 'q_mocap',
+      title: '任務 02｜探索高階光學動作捕捉實驗室',
+      badge: '🕺 動捕導演',
+      targetSite: 'tp_mocap',
+      q: '在台北校區傳賢樓 707「動作擷取與數位視效實驗室」與新竹日新樓 301 中，光學動捕系統（如 MotionAnalysis Raptor-H / OptiTrack）的主要功用為何？',
+      options: [
+        '用來印製紙本講義',
+        '精準捕捉真人演員的全身、臉部與手部動作，即時映射到 3D 動畫角色、VR 遊戲或 VTuber 虛擬網紅身上',
+        '僅能測量室溫高低',
+        '只能播放黑白無聲電影'
+      ],
+      ans: 1,
+      explain: '太棒了！透過高速紅外線光學動捕攝影機與 Cortex / MotionBuilder 軟體，同學能將真人細膩表演直接轉化為 3D 角色動作！'
+    },
+    {
+      id: 'q_audio',
+      title: '任務 03｜體驗 7.1.4 全景聲環繞錄音室',
+      badge: '🎧 金耳朵成音師',
+      targetSite: 'tp_audio',
+      q: '數媒系建置的業界標準錄音室具備何種環繞聲道規格，並組成「中國科大音效團隊」承接產學配樂專案？',
+      options: [
+        '單聲道收音機規格',
+        '7.1.4 全景聲（Dolby Atmos）環繞聲道規格，配備 Neumann 麥克風與 Neve 前級等專業設備',
+        '無聲默片規格',
+        '僅有傳統電話語音規格'
+      ],
+      ans: 1,
+      explain: '完全正確！7.1.4 全景聲錄音室讓學生在校就能使用頂級硬體進行遊戲動態音效、Foley 擬音與沉浸式環繞混音！'
+    },
+    {
+      id: 'q_game',
+      title: '任務 04｜次世代遊戲開發與引擎實戰',
+      badge: '🎮 遊戲創客',
+      targetSite: 'tp_lab503',
+      q: '在傳賢樓 503「數位多媒體創作實驗室」與遊戲設計領域中，學生主要使用哪些業界主流遊戲引擎與工具進行開發？',
+      options: [
+        'Unreal Engine (虛幻引擎)、Unity、Maya、ZBrush 與 Substance 3D 等專業工具',
+        '只使用小畫家與記事本',
+        '只使用算盤計算',
+        '不使用任何電腦軟體'
+      ],
+      ans: 0,
+      explain: '沒錯！系上實驗室配置高階繪圖工作站與雙系統，支援 Unreal Engine 5、Unity 與次世代 3D 美術流程！'
+    },
+    {
+      id: 'q_award',
+      title: '任務 05｜見證紅點獎與全國動畫競賽榮耀',
+      badge: '🏆 國際得獎潛力股',
+      targetSite: 'pav_anim',
+      q: '中國科大數媒系師生作品（如《AI/Lover》、《AI人》、《Break clown 丑角》、《夢迴》等）曾在哪些國內外指標競賽獲獎？',
+      options: [
+        '從未參加任何比賽',
+        '德國紅點設計獎（Red Dot Award）、全國技專校院電腦動畫競賽優勝、放視大賞與台灣原創遊戲大賞',
+        '僅參加校內跑步比賽',
+        '僅參加書法臨摹比賽'
+      ],
+      ans: 1,
+      explain: '答對了！數媒系以各年級「專題製作」為核心，指導學生征戰德國紅點設計獎、全國技專電腦動畫競賽與放視大賞屢獲殊榮！'
+    },
+    {
+      id: 'q_hsinchu',
+      title: '任務 06｜探索新竹校區啟我大樓弧形投影與 VTuber/AI',
+      badge: '🌐 虛實跨域大師',
+      targetSite: 'hc_qiwo',
+      q: '除了台北校區的傳賢樓與格致樓外，新竹校區的「日新樓」與「啟我大樓」以及系上新媒體領域提供哪些前瞻技術環境？',
+      options: [
+        '啟我大樓設有多通道弧形融接投影展演廳，日新樓配備 OptiTrack 虛實整合實驗室，並結合 VTuber 虛擬網紅直播與生成式 AI 創作',
+        '新竹校區沒有任何電腦設備',
+        '只開放給校外人士停車',
+        '與數位媒體完全無關'
+      ],
+      ans: 0,
+      explain: '恭喜完成所有挑戰！你已徹底掌握中國科大數媒系台北／新竹雙校區的頂尖實驗室與四大跨域專業特色！'
+    }
+  ],
+
+  links: [
+    ['dmd_arena', 'tp_office', '#06b6d4'],
+    ['dmd_arena', 'hc_office', '#a855f7'],
+    ['dmd_arena', 'pav_game', '#06b6d4'],
+    ['dmd_arena', 'pav_anim', '#8b5cf6'],
+    ['dmd_arena', 'tp_audio', '#f59e0b'],
+    ['dmd_arena', 'pav_vtuber', '#10b981'],
+    ['tp_office', 'tp_lab503', '#38bdf8'],
+    ['tp_lab503', 'tp_mocap', '#8b5cf6'],
+    ['tp_mocap', 'tp_audio', '#f59e0b'],
+    ['tp_office', 'tp_gezhi', '#ec4899'],
+    ['hc_office', 'hc_anim306', '#8b5cf6'],
+    ['hc_anim306', 'hc_xr301', '#ec4899'],
+    ['hc_office', 'hc_qiwo', '#10b981']
+  ]
+};
+
+// ============================================================================
+// 2. STATE & PERSISTENCE
+// ============================================================================
+const STORAGE_KEY = 'cute_dmd_3d_passport_v1';
+let state = { visited: [], completed: [], role: '準新鮮人' };
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+  if (saved && Array.isArray(saved.visited) && Array.isArray(saved.completed)) state = saved;
+} catch {}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+  $('#quest-count').textContent = `${state.completed.length}/${DMD.quests.length}`;
+}
+saveState();
+
+// ============================================================================
+// 3. WEB AUDIO SYNTHWAVE / CHIPTUNE SOUND ENGINE
+// ============================================================================
+const sound = (() => {
+  let ctx = null, master = null, timer = null, on = true, step = 0;
+  const notes = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46, 783.99];
+  const prog = [[0, 2, 4, 5], [3, 5, 7, 8], [1, 3, 5, 6], [2, 4, 6, 7]];
+
+  function init() {
+    if (ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = on ? 0.16 : 0;
+    master.connect(ctx.destination);
+    timer = setInterval(tick, 420);
+  }
+  function tone(freq, dur = 0.35, type = 'triangle', vol = 0.12) {
+    if (!ctx || !on || ctx.state !== 'running') return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+    osc.connect(g);
+    g.connect(master);
+    osc.start(now);
+    osc.stop(now + dur + 0.03);
+  }
+  function tick() {
+    if (!ctx || !on || ctx.state !== 'running') return;
+    const chord = prog[Math.floor(step / 8) % prog.length];
+    const nIdx = chord[step % chord.length];
+    if (step % 8 === 0) {
+      tone(notes[chord[0]] * 0.5, 1.8, 'sine', 0.08);
+      tone(notes[chord[2]] * 0.5, 1.8, 'sine', 0.06);
+    }
+    if (Math.random() < 0.85) {
+      tone(notes[nIdx], 0.32, 'triangle', 0.07);
+    }
+    step++;
+  }
+  return {
+    resume() { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); },
+    toggle() {
+      on = !on;
+      init();
+      if (ctx && ctx.state === 'suspended') ctx.resume();
+      if (master && ctx) master.gain.setTargetAtTime(on ? 0.16 : 0, ctx.currentTime, 0.15);
+      $('#btn-music').classList.toggle('active', on);
+      $('#btn-music').setAttribute('aria-pressed', String(on));
+    },
+    blip(high = false) {
+      init();
+      if (!ctx || !on) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      tone(high ? 783.99 : 523.25, 0.22, 'sine', 0.12);
+      if (high) setTimeout(() => tone(1046.5, 0.3, 'triangle', 0.12), 80);
+    }
+  };
+})();
+document.addEventListener('pointerdown', () => sound.resume(), { once: true });
+$('#btn-music').onclick = () => sound.toggle();
+
+// ============================================================================
+// 4. THREE.JS 3D METAVERSE SCENE
+// ============================================================================
+const wrap = $('#world');
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+wrap.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+$('#labels').appendChild(labelRenderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color('#090d1a');
+scene.fog = new T.FogExp2('#090d1a', 0.022);
+
+const camera = new T.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 160);
+camera.position.set(0, 14, 19);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enablePan = true;
+controls.screenSpacePanning = false;
+controls.minDistance = 4;
+controls.maxDistance = 42;
+controls.maxPolarAngle = Math.PI * 0.46;
+controls.target.set(0, 0.5, 0);
+
+// Lights
+const hemi = new T.HemisphereLight('#a5f3fc', '#1e1b4b', 1.35);
+scene.add(hemi);
+const dirLight = new T.DirectionalLight('#f8fafc', 2.1);
+dirLight.position.set(12, 22, 14);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+dirLight.shadow.camera.left = -16;
+dirLight.shadow.camera.right = 16;
+dirLight.shadow.camera.top = 16;
+dirLight.shadow.camera.bottom = -16;
+scene.add(dirLight);
+
+const pointCyan = new T.PointLight('#06b6d4', 3.5, 18);
+pointCyan.position.set(-5, 4, 0);
+scene.add(pointCyan);
+const pointPurple = new T.PointLight('#a855f7', 3.5, 18);
+pointPurple.position.set(5, 4, 0);
+scene.add(pointPurple);
+
+// Platform & Cyber Grid Floor
+const baseGroup = new T.Group();
+scene.add(baseGroup);
+
+const groundGeo = new T.CylinderGeometry(14.5, 15.2, 0.5, 64);
+const groundMat = new T.MeshStandardMaterial({ color: '#0f172a', roughness: 0.7, metalness: 0.25 });
+const ground = new T.Mesh(groundGeo, groundMat);
+ground.position.y = -0.25;
+ground.receiveShadow = true;
+baseGroup.add(ground);
+
+const grid = new T.GridHelper(26, 26, '#06b6d4', '#1e293b');
+grid.position.y = 0.01;
+grid.material.transparent = true;
+grid.material.opacity = 0.45;
+baseGroup.add(grid);
+
+// Zone Platform Pads (Taipei West, Hsinchu East, Central Arena)
+function addZonePad(x, z, r, color, labelText) {
+  const ring = new T.Mesh(
+    new T.RingGeometry(r - 0.12, r, 48).rotateX(-Math.PI / 2),
+    new T.MeshBasicMaterial({ color, side: T.DoubleSide, transparent: true, opacity: 0.65 })
+  );
+  ring.position.set(x, 0.02, z);
+  baseGroup.add(ring);
+
+  const disc = new T.Mesh(
+    new T.CircleGeometry(r - 0.12, 48).rotateX(-Math.PI / 2),
+    new T.MeshStandardMaterial({ color, transparent: true, opacity: 0.12, roughness: 0.8 })
+  );
+  disc.position.set(x, 0.015, z);
+  baseGroup.add(disc);
+
+  const el = document.createElement('div');
+  el.className = 'zone-label';
+  el.textContent = labelText;
+  const obj = new CSS2DObject(el);
+  obj.position.set(x, 0.12, z + r + 0.55);
+  scene.add(obj);
+}
+addZonePad(0, 0, 2.6, '#06b6d4', 'CENTRAL · 數媒創客元宇宙廣場');
+addZonePad(-5.2, -0.8, 4.4, '#38bdf8', 'TAIPEI CAMPUS · 台北萬芳校區（傳賢樓／格致樓）');
+addZonePad(5.2, -0.8, 4.4, '#a855f7', 'HSINCHU CAMPUS · 新竹湖口校區（日新樓／啟我大樓）');
+
+// Build 3D Buildings for Each Site
+const pickables = [];
+const siteMeshes = new Map();
+const floatingRings = [];
+const labels = [];
+
+function box(w, h, d, color, x = 0, y = 0, z = 0, emissive = '#000000', emIntensity = 0) {
+  const m = new T.Mesh(
+    new T.BoxGeometry(w, h, d),
+    new T.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.2, emissive, emissiveIntensity: emIntensity })
+  );
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+function buildSiteModel(s) {
+  const g = new T.Group();
+  g.position.set(s.pos[0], 0, s.pos[1]);
+  const [w, h, d] = s.size;
+
+  // Base pedestal
+  const ped = box(w + 0.3, 0.14, d + 0.3, '#1e293b', 0, 0.07, 0, s.color, 0.22);
+  g.add(ped);
+
+  if (s.model === 'arena') {
+    const core = new T.Mesh(
+      new T.CylinderGeometry(1.1, 1.35, 0.55, 32),
+      new T.MeshStandardMaterial({ color: '#1e293b', metalness: 0.5, roughness: 0.3 })
+    );
+    core.position.y = 0.35;
+    g.add(core);
+    const holo = new T.Mesh(
+      new T.OctahedronGeometry(0.68, 1),
+      new T.MeshStandardMaterial({ color: s.color, emissive: s.color, emissiveIntensity: 0.75, wireframe: true })
+    );
+    holo.position.y = 1.45;
+    g.add(holo);
+    floatingRings.push(holo);
+    for (let i = 0; i < 2; i++) {
+      const torus = new T.Mesh(
+        new T.TorusGeometry(1.15 + i * 0.28, 0.035, 16, 64),
+        new T.MeshStandardMaterial({ color: i ? '#a855f7' : '#06b6d4', emissive: i ? '#a855f7' : '#06b6d4', emissiveIntensity: 0.8 })
+      );
+      torus.position.y = 1.45;
+      torus.rotation.x = Math.PI / 3 + i * 0.6;
+      g.add(torus);
+      floatingRings.push(torus);
+    }
+  } else if (s.model === 'mocap') {
+    const body = box(w, h * 0.75, d, '#1e293b', 0, 0.14 + h * 0.375, 0);
+    g.add(body);
+    const roof = box(w + 0.12, 0.1, d + 0.12, s.color, 0, 0.14 + h * 0.78, 0, s.color, 0.55);
+    g.add(roof);
+    for (const dx of [-w * 0.38, 0, w * 0.38]) {
+      for (const dz of [-d * 0.38, d * 0.38]) {
+        const cam = new T.Mesh(
+          new T.SphereGeometry(0.09, 12, 12),
+          new T.MeshStandardMaterial({ color: '#ffffff', emissive: s.color, emissiveIntensity: 1.2 })
+        );
+        cam.position.set(dx, 0.2 + h * 0.82, dz);
+        g.add(cam);
+      }
+    }
+  } else if (s.model === 'audio') {
+    const body = box(w, h * 0.8, d, '#27272a', 0, 0.14 + h * 0.4, 0);
+    g.add(body);
+    for (let i = -3; i <= 3; i++) {
+      const bh = 0.28 + Math.abs(Math.cos(i)) * 0.55;
+      const bar = box(0.14, bh, 0.08, '#f59e0b', i * 0.24, 0.35 + bh / 2, d / 2 + 0.04, '#f59e0b', 0.8);
+      g.add(bar);
+    }
+  } else if (s.model === 'dome') {
+    const dome = new T.Mesh(
+      new T.SphereGeometry(w * 0.48, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      new T.MeshStandardMaterial({ color: '#1e293b', emissive: s.color, emissiveIntensity: 0.28, roughness: 0.35 })
+    );
+    dome.position.y = 0.14;
+    g.add(dome);
+  } else {
+    const body = box(w, h, d, '#1e293b', 0, 0.14 + h / 2, 0);
+    g.add(body);
+    const crown = box(w + 0.1, 0.12, d + 0.1, s.color, 0, 0.14 + h + 0.06, 0, s.color, 0.65);
+    g.add(crown);
+    for (let row = 0; row < 2; row++) {
+      for (let col = -1; col <= 1; col++) {
+        const win = box(w * 0.2, 0.22, d + 0.04, s.color, col * w * 0.28, 0.48 + row * 0.45, 0, s.color, 0.6);
+        g.add(win);
+      }
+    }
+  }
+
+  g.traverse(obj => {
+    if (obj.isMesh) {
+      obj.userData.site = s.id;
+      pickables.push(obj);
+    }
+  });
+  scene.add(g);
+  siteMeshes.set(s.id, g);
+
+  const el = document.createElement('button');
+  el.className = 'pill';
+  el.style.setProperty('--pill-color', s.color);
+  el.innerHTML = `<em>${s.icon}</em><span>${s.name}</span>`;
+  el.onclick = () => selectItem('site', s.id);
+  const cssObj = new CSS2DObject(el);
+  cssObj.position.set(s.pos[0], s.size[1] + 0.65, s.pos[1]);
+  scene.add(cssObj);
+  labels.push({ el, obj: cssObj, type: 'site', id: s.id });
+}
+DMD.sites.forEach(buildSiteModel);
+
+// Build Faculty & Student 3D Avatars
+const npcGroup = new T.Group();
+scene.add(npcGroup);
+DMD.faculty.forEach(f => {
+  const g = new T.Group();
+  g.position.set(f.pos[0], 0.08, f.pos[1]);
+
+  const body = new T.Mesh(
+    new T.CapsuleGeometry(0.14, 0.28, 8, 16),
+    new T.MeshStandardMaterial({ color: f.color, emissive: f.color, emissiveIntensity: 0.25 })
+  );
+  body.position.y = 0.28;
+  body.castShadow = true;
+  body.userData.faculty = f.id;
+  g.add(body);
+  pickables.push(body);
+
+  const head = new T.Mesh(
+    new T.SphereGeometry(0.13, 16, 16),
+    new T.MeshStandardMaterial({ color: '#fde68a' })
+  );
+  head.position.y = 0.58;
+  head.userData.faculty = f.id;
+  g.add(head);
+  pickables.push(head);
+
+  npcGroup.add(g);
+
+  const el = document.createElement('button');
+  el.className = 'pill npc-pill';
+  el.innerHTML = `<em>♙</em><span>${f.name} · ${f.title.replace('副教授兼','').replace('助理教授兼','')}</span>`;
+  el.onclick = () => selectItem('faculty', f.id);
+  const cssObj = new CSS2DObject(el);
+  cssObj.position.set(f.pos[0], 0.92, f.pos[1]);
+  scene.add(cssObj);
+  labels.push({ el, obj: cssObj, type: 'faculty', id: f.id, isNpc: true });
+});
+
+// Animated Connecting Energy Lines
+const linkGroup = new T.Group();
+scene.add(linkGroup);
+DMD.links.forEach(([aId, bId, col]) => {
+  const a = DMD.sites.find(s => s.id === aId);
+  const b = DMD.sites.find(s => s.id === bId);
+  if (!a || !b) return;
+  const p1 = new T.Vector3(a.pos[0], 0.12, a.pos[1]);
+  const p2 = new T.Vector3(b.pos[0], 0.12, b.pos[1]);
+  const mid = p1.clone().lerp(p2, 0.5);
+  mid.y = 0.45;
+  const curve = new T.QuadraticBezierCurve3(p1, mid, p2);
+  const tube = new T.Mesh(
+    new T.TubeGeometry(curve, 24, 0.035, 8, false),
+    new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55 })
+  );
+  linkGroup.add(tube);
+});
+
+// Animated Student Walkers along Pathways
+const walkers = [];
+DMD.links.forEach(([aId, bId, col], i) => {
+  const a = DMD.sites.find(s => s.id === aId);
+  const b = DMD.sites.find(s => s.id === bId);
+  const m = new T.Mesh(
+    new T.SphereGeometry(0.11, 12, 12),
+    new T.MeshStandardMaterial({ color: '#ffffff', emissive: col, emissiveIntensity: 0.9 })
+  );
+  npcGroup.add(m);
+  walkers.push({ mesh: m, a: a.pos, b: b.pos, t: (i * 0.19) % 1, speed: 0.16 + (i % 3) * 0.04 });
+});
+
+// Selection Highlight Ring
+const selectRing = new T.Mesh(
+  new T.RingGeometry(1.3, 1.5, 48).rotateX(-Math.PI / 2),
+  new T.MeshBasicMaterial({ color: '#06b6d4', side: T.DoubleSide, transparent: true, opacity: 0.9 })
+);
+selectRing.position.y = 0.04;
+selectRing.visible = false;
+scene.add(selectRing);
+
+// ============================================================================
+// 5. UI RENDERING & INTERACTION LOGIC
+// ============================================================================
+let currentTab = 'spaces';
+let trackFilter = 'all';
+let selected = null;
+let flight = null;
+let tourIdx = -1;
+
+function flyTo(targetVec, offsetVec) {
+  flight = {
+    start: performance.now(),
+    fromPos: camera.position.clone(),
+    toPos: targetVec.clone().add(offsetVec),
+    fromTarget: controls.target.clone(),
+    toTarget: targetVec.clone()
+  };
+}
+
+function markVisited(id) {
+  if (!state.visited.includes(id)) {
+    state.visited.push(id);
+    saveState();
+  }
+}
+
+function selectItem(type, id) {
+  sound.blip();
+  selected = { type, id };
+  markVisited(`${type}:${id}`);
+  if (type === 'site') {
+    const s = DMD.sites.find(x => x.id === id);
+    if (s) {
+      selectRing.visible = true;
+      selectRing.position.set(s.pos[0], 0.05, s.pos[1]);
+      flyTo(new T.Vector3(s.pos[0], 0.8, s.pos[1]), new T.Vector3(2.6, 5.2, 6.8));
+    }
+  } else if (type === 'faculty') {
+    const f = DMD.faculty.find(x => x.id === id);
+    if (f) {
+      selectRing.visible = true;
+      selectRing.position.set(f.pos[0], 0.05, f.pos[1]);
+      flyTo(new T.Vector3(f.pos[0], 0.6, f.pos[1]), new T.Vector3(2.0, 3.8, 5.0));
+    }
+  }
+  labels.forEach(l => {
+    const isSel = l.type === type && l.id === id;
+    l.el.classList.toggle('selected', isSel);
+    l.el.classList.toggle('dim', !isSel);
+  });
+  renderCard();
+  if (currentTab === 'quests') renderList();
+}
+
+function renderCard() {
+  const card = $('#card');
+  if (!selected) { card.hidden = true; return; }
+  card.hidden = false;
+  const { type, id } = selected;
+  let html = `<button class="close" aria-label="關閉">×</button>`;
+
+  if (type === 'site') {
+    const s = DMD.sites.find(x => x.id === id);
+    const tr = DMD.tracks.find(t => t.id === s.track);
+    const relatedFaculty = DMD.faculty.filter(f => f.site === s.id);
+    const relatedAwards = DMD.awards.filter(a => a.site === s.id);
+    const relatedQuests = DMD.quests.filter(q => q.targetSite === s.id);
+
+    html += `
+      <div class="kicker">${s.sub}</div>
+      <h2>${s.icon} ${s.name}</h2>
+      <span class="chip ${tr.chip}">${tr.name}</span>
+      <span class="chip">${s.room}</span>
+      <div class="card-visual">
+        <span class="vis-icon">${s.icon}</span>
+        <div class="vis-tag">${tr.en}</div>
+        <div class="vis-title">${s.name}</div>
+        <div class="vis-sub">${s.room}</div>
+      </div>
+      <p class="lead">${s.desc}</p>
+      <h3>空間與硬體規格</h3>
+      <div class="spec-grid">
+        ${s.specs.map(([k, v]) => `<div class="spec-item"><small>${k}</small><b>${v}</b></div>`).join('')}
+      </div>
+      <h3>教學與實作亮點</h3>
+      <ul>${s.highlights.map(h => `<li>${h}</li>`).join('')}</ul>
+      ${relatedFaculty.length ? `<h3>駐點指導師資</h3><div>${relatedFaculty.map(f => `<button class="chip amber" data-faculty="${f.id}">♙ ${f.name} ${f.title}</button>`).join('')}</div>` : ''}
+      ${relatedAwards.length ? `<h3>代表獲獎與產學成果</h3>${relatedAwards.map(a => `<div class="info-box"><b>🏆 ${a.title}</b><br><small>${a.work}</small><p style="margin-top:4px">${a.desc}</p></div>`).join('')}` : ''}
+      ${relatedQuests.length ? `<h3>連動的創客闖關任務</h3>${relatedQuests.map(q => `<button class="row" data-quest="${q.id}"><span class="idx" style="background:var(--cyan)">★</span><span class="copy"><strong>${q.title}</strong><small>${state.completed.includes(q.id) ? '✓ 已完成挑戰' : '點選前往作答領取徽章'}</small></span></button>`).join('')}` : ''}
+    `;
+  } else if (type === 'track') {
+    const tr = DMD.tracks.find(x => x.id === id);
+    const trSites = DMD.sites.filter(s => s.track === tr.id);
+    html += `
+      <div class="kicker">${tr.en}</div>
+      <h2>${tr.icon} ${tr.name}</h2>
+      <p class="lead">${tr.summary}</p>
+      <h3>核心必修／選修課程模組</h3>
+      <ul>${tr.courses.map(c => `<li>${c}</li>`).join('')}</ul>
+      <h3>業界主流工具與引擎</h3>
+      <div>${tr.tools.map(t => `<span class="chip ${tr.chip}">${t}</span>`).join('')}</div>
+      <h3>畢業職涯發展方向</h3>
+      <div>${tr.careers.map(c => `<span class="chip">${c}</span>`).join('')}</div>
+      <h3>對應 3D 專業實驗室與展館</h3>
+      <div>${trSites.map(s => `<button class="chip ${tr.chip}" data-site="${s.id}">${s.icon} ${s.name} ↗</button>`).join('')}</div>
+    `;
+  } else if (type === 'faculty') {
+    const f = DMD.faculty.find(x => x.id === id);
+    const tr = DMD.tracks.find(t => t.id === f.track);
+    const site = DMD.sites.find(s => s.id === f.site);
+    html += `
+      <div class="kicker">FACULTY & MENTORSHIP</div>
+      <h2>♙ ${f.name} <small style="font-size:13px;color:var(--muted)">${f.title}</small></h2>
+      <span class="chip ${tr.chip}">${tr.name}</span>
+      <div class="info-box" style="border-left:3px solid var(--cyan)">
+        <b>💬 給數媒系同學的話：</b>
+        <p style="margin-top:6px">「${f.quote}」</p>
+      </div>
+      <h3>研究與教學專長</h3>
+      <p class="lead">${f.specialty}</p>
+      <h3>對應教學實驗室</h3>
+      <button class="chip cyan" data-site="${site.id}">${site.icon} ${site.name} ↗</button>
+    `;
+  } else if (type === 'quest') {
+    const q = DMD.quests.find(x => x.id === id);
+    const site = DMD.sites.find(s => s.id === q.targetSite);
+    const done = state.completed.includes(q.id);
+    html += `
+      <div class="kicker">DMD CREATOR QUEST</div>
+      <h2>${q.title}</h2>
+      <span class="chip amber">${done ? '★ 已獲得徽章：' + q.badge : '完成可得徽章：' + q.badge}</span>
+      <div class="info-box">
+        <b>📍 探索目標場域：</b>
+        <button class="chip cyan" data-site="${site.id}">${site.icon} ${site.name} ↗</button>
+      </div>
+      <h3>情境挑戰題</h3>
+      <p class="lead">${q.q}</p>
+      <div>
+        ${q.options.map((opt, idx) => `
+          <button class="quiz-btn" data-ans="${idx}" ${done ? 'disabled' : ''}>
+            <b>${String.fromCharCode(65 + idx)}.</b> ${opt}
+          </button>
+        `).join('')}
+      </div>
+      <div id="quiz-msg" class="quiz-feedback" ${done ? '' : 'hidden'}>
+        ${done ? '🎉 挑戰成功！' + q.explain : ''}
+      </div>
+    `;
+  }
+
+  card.innerHTML = html;
+  card.scrollTop = 0;
+  card.querySelector('.close').onclick = () => {
+    selected = null;
+    card.hidden = true;
+    selectRing.visible = false;
+    labels.forEach(l => l.el.classList.remove('selected', 'dim'));
+  };
+  bindCardLinks(card);
+}
+
+function bindCardLinks(root) {
+  root.querySelectorAll('[data-site]').forEach(b => b.onclick = () => selectItem('site', b.dataset.site));
+  root.querySelectorAll('[data-track]').forEach(b => b.onclick = () => selectItem('track', b.dataset.track));
+  root.querySelectorAll('[data-faculty]').forEach(b => b.onclick = () => selectItem('faculty', b.dataset.faculty));
+  root.querySelectorAll('[data-quest]').forEach(b => b.onclick = () => selectItem('quest', b.dataset.quest));
+  root.querySelectorAll('[data-ans]').forEach(b => b.onclick = () => {
+    const q = DMD.quests.find(x => x.id === selected.id);
+    if (!q) return;
+    const choice = Number(b.dataset.ans);
+    const msg = root.querySelector('#quiz-msg');
+    msg.hidden = false;
+    if (choice === q.ans) {
+      sound.blip(true);
+      if (!state.completed.includes(q.id)) {
+        state.completed.push(q.id);
+        saveState();
+      }
+      renderCard();
+      renderList();
+    } else {
+      sound.blip(false);
+      msg.textContent = '💡 再想一下：可點擊上方目標場域閱讀介紹後再作答！';
+    }
+  });
+}
+
+function renderList() {
+  const q = $('#search').value.trim().toLowerCase();
+  const filterBar = $('#filter-bar');
+  const list = $('#list');
+  filterBar.innerHTML = '';
+  let html = '';
+
+  if (currentTab === 'spaces') {
+    const filters = [
+      ['all', `全部 (${DMD.sites.length})`],
+      ['taipei', '台北校區'],
+      ['hsinchu', '新竹校區'],
+      ['pavilion', '專業領域館']
+    ];
+    filterBar.innerHTML = filters.map(([k, label]) =>
+      `<button class="chip ${trackFilter === k ? 'cyan' : ''}" data-filter="${k}">${label}</button>`
+    ).join('');
+    filterBar.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => {
+      trackFilter = b.dataset.filter;
+      renderList();
+    });
+
+    const items = DMD.sites.filter(s =>
+      (trackFilter === 'all' || s.zone === trackFilter || (trackFilter === 'taipei' && s.zone === 'plaza')) &&
+      [s.name, s.sub, s.room, s.desc, ...s.highlights].join(' ').toLowerCase().includes(q)
+    );
+    html = items.map(s => `
+      <button class="row" data-site="${s.id}">
+        <span class="idx" style="background:${s.color}">${s.icon}</span>
+        <span class="copy">
+          <strong>${s.name}</strong>
+          <small>${s.room}</small>
+        </span>
+        <span>›</span>
+      </button>
+    `).join('');
+  } else if (currentTab === 'tracks') {
+    html = DMD.tracks.filter(t => [t.name, t.summary, ...t.courses, ...t.careers].join(' ').toLowerCase().includes(q)).map(t => `
+      <button class="row" data-track="${t.id}">
+        <span class="idx" style="background:${t.color}">${t.icon}</span>
+        <span class="copy">
+          <strong>${t.name}</strong>
+          <small>${t.courses.slice(0, 3).join(' · ')}…</small>
+        </span>
+        <span>›</span>
+      </button>
+    `).join('');
+  } else if (currentTab === 'faculty') {
+    html = `<p class="list-group">系所專任與核心師資代表</p>` + DMD.faculty.filter(f => [f.name, f.title, f.specialty].join(' ').toLowerCase().includes(q)).map(f => `
+      <button class="row" data-faculty="${f.id}">
+        <span class="idx" style="background:${f.color}">♙</span>
+        <span class="copy">
+          <strong>${f.name} · ${f.title}</strong>
+          <small>${f.specialty}</small>
+        </span>
+        <span>›</span>
+      </button>
+    `).join('');
+  } else if (currentTab === 'awards') {
+    html = `<p class="list-group">國際紅點與全國競賽榮譽榜</p>` + DMD.awards.filter(a => [a.title, a.work, a.desc].join(' ').toLowerCase().includes(q)).map(a => `
+      <button class="row" data-site="${a.site}">
+        <span class="idx" style="background:var(--amber)">🏆</span>
+        <span class="copy">
+          <strong>${a.title}</strong>
+          <small>${a.work}<br>${a.desc}</small>
+        </span>
+        <span>↗</span>
+      </button>
+    `).join('');
+  } else if (currentTab === 'roadmap') {
+    html = `<p class="list-group">四年一貫「專題製作」培育地圖</p>` + DMD.roadmap.map((r, i) => `
+      <button class="row" data-site="${r.site}">
+        <span class="idx" style="background:var(--purple)">Y${i + 1}</span>
+        <span class="copy">
+          <strong>${r.grade}｜${r.title}</strong>
+          <small>核心：${r.focus}<br>產出：${r.output}</small>
+        </span>
+        <span>↗</span>
+      </button>
+    `).join('');
+  } else if (currentTab === 'quests') {
+    const xp = state.completed.length * 100;
+    html = `
+      <div class="info-box" style="margin:6px 4px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b>🎮 數媒創客護照進度</b>
+          <span class="chip cyan">${xp} / ${DMD.quests.length * 100} XP</span>
+        </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:4px">
+          探索雙校區 3D 實驗室並完成 6 道專業問答，收集「全端數媒創客」徽章！
+        </p>
+      </div>
+    ` + DMD.quests.map((item, i) => {
+      const done = state.completed.includes(item.id);
+      return `
+        <button class="row" data-quest="${item.id}">
+          <span class="idx" style="background:${done ? 'var(--emerald)' : 'var(--cyan)'}">${done ? '✓' : i + 1}</span>
+          <span class="copy">
+            <strong>${item.title}</strong>
+            <small>${done ? '已獲得：' + item.badge : '點選挑戰 · ' + item.badge}</small>
+          </span>
+          <span>›</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  list.innerHTML = html || `<p style="padding:18px;color:var(--muted)">找不到相符項目，請嘗試其他關鍵字。</p>`;
+  bindCardLinks(list);
+}
+renderList();
+
+// Tabs & Search
+$$('[data-tab]').forEach(b => b.onclick = () => {
+  currentTab = b.dataset.tab;
+  $$('[data-tab]').forEach(x => x.classList.toggle('active', x === b));
+  renderList();
+});
+$('#search').oninput = renderList;
+
+// Zone & Camera Quick Controls
+const zoneCam = {
+  plaza: [new T.Vector3(0, 0.5, 0), new T.Vector3(0, 12, 16)],
+  taipei: [new T.Vector3(-4.8, 0.5, -0.8), new T.Vector3(-2.5, 9.5, 11.5)],
+  hsinchu: [new T.Vector3(4.8, 0.5, -0.8), new T.Vector3(2.5, 9.5, 11.5)],
+  pavilion: [new T.Vector3(0, 0.5, -4.5), new T.Vector3(0, 10, 13)]
+};
+$$('[data-zone]').forEach(b => b.onclick = () => {
+  const z = zoneCam[b.dataset.zone];
+  if (z) flyTo(z[0], z[1]);
+});
+$$('[data-cam]').forEach(b => b.onclick = () => {
+  flight = null;
+  const act = b.dataset.cam;
+  if (act === 'zoomin' || act === 'zoomout') {
+    const dir = camera.position.clone().sub(controls.target);
+    const d = Math.max(controls.minDistance, Math.min(controls.maxDistance, dir.length() * (act === 'zoomin' ? 0.78 : 1.25)));
+    camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(d));
+    controls.update();
+    return;
+  }
+  const fwd = new T.Vector3(controls.target.x - camera.position.x, 0, controls.target.z - camera.position.z).normalize();
+  const right = new T.Vector3(-fwd.z, 0, fwd.x);
+  const step = 1.4;
+  const move = new T.Vector3();
+  if (act === 'up') move.addScaledVector(fwd, step);
+  if (act === 'down') move.addScaledVector(fwd, -step);
+  if (act === 'right') move.addScaledVector(right, step);
+  if (act === 'left') move.addScaledVector(right, -step);
+  controls.target.add(move);
+  camera.position.add(move);
+  controls.update();
+});
+
+// Top left buttons
+$('#btn-home').onclick = () => {
+  selected = null;
+  $('#card').hidden = true;
+  selectRing.visible = false;
+  labels.forEach(l => l.el.classList.remove('selected', 'dim'));
+  flyTo(new T.Vector3(0, 0.5, 0), new T.Vector3(0, 13.5, 18.5));
+};
+$('#btn-quests').onclick = () => {
+  currentTab = 'quests';
+  $$('[data-tab]').forEach(x => x.classList.toggle('active', x.dataset.tab === 'quests'));
+  renderList();
+  selectItem('quest', DMD.quests.find(q => !state.completed.includes(q.id))?.id || DMD.quests[0].id);
+};
+$('#btn-tour').onclick = () => {
+  tourIdx = (tourIdx + 1) % DMD.sites.length;
+  selectItem('site', DMD.sites[tourIdx].id);
+};
+
+// Bottom HUD Lighting & Toggles
+$$('[data-lighting]').forEach(b => b.onclick = () => {
+  $$('[data-lighting]').forEach(x => x.classList.toggle('active', x === b));
+  const mode = b.dataset.lighting;
+  document.body.classList.toggle('light-mode', mode === 'studio');
+  if (mode === 'cyber') {
+    scene.background.set('#090d1a');
+    scene.fog.color.set('#090d1a');
+    hemi.intensity = 1.35;
+    dirLight.intensity = 2.1;
+    $('#scene-clock').textContent = 'CYBER NEON';
+    $('#scene-sub').textContent = '次世代虛實光影';
+  } else if (mode === 'studio') {
+    scene.background.set('#e0e7ff');
+    scene.fog.color.set('#e0e7ff');
+    hemi.intensity = 2.2;
+    dirLight.intensity = 2.8;
+    $('#scene-clock').textContent = 'DAYLIGHT';
+    $('#scene-sub').textContent = '晨間雙校區晴空';
+  } else {
+    scene.background.set('#1e1b4b');
+    scene.fog.color.set('#1e1b4b');
+    hemi.intensity = 1.6;
+    dirLight.intensity = 2.4;
+    dirLight.color.set('#fdba74');
+    $('#scene-clock').textContent = 'SHOWCASE DUSK';
+    $('#scene-sub').textContent = '放視／新一代展演暮光';
+  }
+});
+
+$('#toggle-people').onclick = e => {
+  const on = !npcGroup.visible;
+  npcGroup.visible = on;
+  e.currentTarget.classList.toggle('active', on);
+  labels.filter(l => l.isNpc).forEach(l => l.obj.visible = on);
+};
+$('#toggle-links').onclick = e => {
+  const on = !linkGroup.visible;
+  linkGroup.visible = on;
+  e.currentTarget.classList.toggle('active', on);
+};
+$('#toggle-labels').onclick = e => {
+  const on = !e.currentTarget.classList.contains('active');
+  e.currentTarget.classList.toggle('active', on);
+  labels.forEach(l => l.obj.visible = on);
+};
+$('#toggle-bird').onclick = e => {
+  const on = !e.currentTarget.classList.contains('active');
+  e.currentTarget.classList.toggle('active', on);
+  if (on) flyTo(new T.Vector3(0, 0, 0), new T.Vector3(0.01, 28, 2));
+  else $('#btn-home').click();
+};
+
+// Raycasting & Keyboard WASD
+const raycaster = new T.Raycaster();
+const pointer = new T.Vector2();
+let downPos = null;
+renderer.domElement.addEventListener('pointerdown', e => { downPos = { x: e.clientX, y: e.clientY }; flight = null; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downPos || Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 6) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  if (hits.length) {
+    const d = hits[0].object.userData;
+    if (d.faculty) selectItem('faculty', d.faculty);
+    else if (d.site) selectItem('site', d.site);
+  }
+});
+
+window.addEventListener('keydown', e => {
+  if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'm') { sound.toggle(); return; }
+  if (['w', 'a', 's', 'd'].includes(k)) {
+    flight = null;
+    const fwd = new T.Vector3(controls.target.x - camera.position.x, 0, controls.target.z - camera.position.z).normalize();
+    const right = new T.Vector3(-fwd.z, 0, fwd.x);
+    const move = new T.Vector3();
+    if (k === 'w') move.addScaledVector(fwd, 0.9);
+    if (k === 's') move.addScaledVector(fwd, -0.9);
+    if (k === 'd') move.addScaledVector(right, 0.9);
+    if (k === 'a') move.addScaledVector(right, -0.9);
+    controls.target.add(move);
+    camera.position.add(move);
+    controls.update();
+  }
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+});
+
+// Animation Loop
+let lastTime = performance.now();
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastTime) / 1000, 0.08);
+  lastTime = now;
+
+  if (flight) {
+    const t = Math.min((now - flight.start) / 750, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    camera.position.lerpVectors(flight.fromPos, flight.toPos, ease);
+    controls.target.lerpVectors(flight.fromTarget, flight.toTarget, ease);
+    if (t >= 1) flight = null;
+  }
+
+  floatingRings.forEach((r, i) => {
+    r.rotation.y += dt * (0.6 + i * 0.25);
+    r.rotation.z += dt * 0.35;
+  });
+
+  walkers.forEach(w => {
+    w.t = (w.t + dt * w.speed) % 1;
+    const pingpong = w.t < 0.5 ? w.t * 2 : (1 - w.t) * 2;
+    w.mesh.position.set(
+      w.a[0] + (w.b[0] - w.a[0]) * pingpong,
+      0.16 + Math.abs(Math.sin(now * 0.008)) * 0.08,
+      w.a[1] + (w.b[1] - w.a[1]) * pingpong
+    );
+  });
+
+  if (selectRing.visible) {
+    selectRing.scale.setScalar(1 + Math.sin(now * 0.005) * 0.06);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
